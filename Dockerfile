@@ -42,7 +42,7 @@ RUN source /opt/intel/oneapi/setvars.sh && \
     make -j4 && make install && cd ../.. && rm -rf xdmf
 
 #...Add a non-root user
-RUN useradd -ms /bin/bash adcirc
+# RUN useradd -ms /bin/bash adcirc
 
 #...Create an environment file
 # This file is sourced by the ci environment
@@ -50,22 +50,17 @@ RUN useradd -ms /bin/bash adcirc
 #
 # source /etc/environment
 #
-RUN echo export NETCDFHOME=$(spack find -p --no-groups netcdf-c | tr -s ' ' | cut -d$' ' -f2) >>  /home/adcirc/.bashrc && \
-    echo export HDF5HOME=$(spack find -p --no-groups hdf5 | tr -s ' ' | cut -d$' ' -f2) >> /home/adcirc/.bashrc && \
-    echo export HDF5_ROOT=$(spack find -p --no-groups hdf5 | tr -s ' ' | cut -d$' ' -f2) >> /home/adcirc/.bashrc && \
-    echo export NETCDF_FORTRAN_HOME=$(spack find -p --no-groups netcdf-fortran | tr -s ' ' | cut -d$' ' -f2) >> /home/adcirc/.bashrc && \
-    echo export XDMFHOME=/opt/xdmf >> /home/adcirc/.bashrc && \
+RUN echo export NETCDFHOME=$(spack find -p --no-groups netcdf-c | tr -s ' ' | cut -d$' ' -f2) >>  /etc/environment && \
+    echo export HDF5HOME=$(spack find -p --no-groups hdf5 | tr -s ' ' | cut -d$' ' -f2) >> /etc/environment && \
+    echo export HDF5_ROOT=$(spack find -p --no-groups hdf5 | tr -s ' ' | cut -d$' ' -f2) >> /etc/environment && \
+    echo export NETCDF_FORTRAN_HOME=$(spack find -p --no-groups netcdf-fortran | tr -s ' ' | cut -d$' ' -f2) >> /etc/environment && \
+    echo export XDMFHOME=/opt/xdmf >> /etc/environment && \
     echo export PATH=$(spack find -p --no-groups netcdf-c | tr -s ' ' | cut -d$' ' -f2)/bin:\
 $(spack find -p --no-groups netcdf-fortran | tr -s ' ' | cut -d$' ' -f2)/bin:\
 $(spack find -p --no-groups openmpi | tr -s ' ' | cut -d$' ' -f2)/bin:\
 /opt/intel/oneapi/compiler/latest/linux/bin/intel64:\
-/opt/intel/oneapi/compiler/latest/linux/bin:$PATH >> /home/adcirc/.bashrc  && \
+/opt/intel/oneapi/compiler/latest/linux/bin:$PATH >> /etc/environment  && \
     echo export LD_LIBRARY_PATH=$(spack find -p --no-groups netcdf-c | tr -s ' ' | cut -d$' ' -f2)/lib:\
 $(spack find -p --no-groups netcdf-fortran | tr -s ' ' | cut -d$' ' -f2)/lib:\
 $(spack find -p --no-groups openmpi | tr -s ' ' | cut -d$' ' -f2)/lib:\
-/opt/intel/oneapi/compiler/latest/linux/compiler/lib/intel64_lin >> /home/adcirc/.bashrc
-RUN chown adcirc:adcirc /home/adcirc/.bashrc
-
-USER adcirc
-WORKDIR /home/adcirc
-ENV ENV=/home/adcirc/.bashrc
+/opt/intel/oneapi/compiler/latest/linux/compiler/lib/intel64_lin >> /etc/environment
