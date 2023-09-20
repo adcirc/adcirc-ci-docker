@@ -16,15 +16,18 @@
 FROM spack/ubuntu-jammy:latest
 
 #...Install software from package managers including the Intel compilers
-RUN apt-get update --fix-missing && apt-get --yes install ca-certificates wget gpg cmake git git-lfs libboost-dev libxml2-dev libjpeg-dev && \
+RUN apt-get update --fix-missing && apt-get --yes install ca-certificates wget gpg cmake git git-lfs libboost-dev libxml2-dev libjpeg-dev python3-pip && \
     wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null && \
     echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | tee /etc/apt/sources.list.d/oneAPI.list && \
-    apt-get update; apt-get install --yes intel-oneapi-compiler-fortran intel-oneapi-compiler-dpcpp-cpp && \
+    apt-get update; apt-get install --yes intel-oneapi-compiler-fortran intel-oneapi-compiler-dpcpp-cpp && pip3 install pyyaml && \
     rm -rf /var/lib/apt/lists/*
 
 #...Install software from spack
+COPY edit_compilers.py /root/edit_compilers.py
 RUN source /opt/intel/oneapi/setvars.sh && \
     spack compiler find && \
+    python3 edit_compilers.py /root/.spack/linux/compilers.yaml oneapi && \
+    rm edit_compilers.py && \
     spack external find --all --not-buildable && \
     spack install netcdf-fortran ^hdf5~mpi %oneapi && \
     spack install libxml2 %oneapi && \
