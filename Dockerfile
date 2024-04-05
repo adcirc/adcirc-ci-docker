@@ -16,19 +16,20 @@
 FROM spack/ubuntu-jammy:latest
 
 #...Install software from package managers including the Intel compilers
-RUN apt-get update --fix-missing && apt-get --yes install ca-certificates wget gpg cmake git git-lfs libboost-dev libxml2-dev libjpeg-dev python3-pip && \
+RUN apt-get update --fix-missing && apt-get --yes install ca-certificates wget gpg cmake git git-lfs ssh libboost-dev libxml2-dev libjpeg-dev python3 && \
     wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null && \
     echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | tee /etc/apt/sources.list.d/oneAPI.list && \
-    apt-get update; apt-get install --yes intel-oneapi-compiler-fortran intel-oneapi-compiler-dpcpp-cpp && pip3 install pyyaml && \
+    apt-get update; apt-get install --yes intel-oneapi-compiler-fortran intel-oneapi-compiler-dpcpp-cpp && \
+    pip3 install pyyaml matplotlib basemap basemap-data-hires pyproj numpy xarray netCDF4 tqdm && \
     rm -rf /var/lib/apt/lists/*
 
 #...Install software from spack
-COPY edit_compilers.py /root/edit_compilers.py
+COPY edit_spack.py /root/edit_spack.py
 RUN source /opt/intel/oneapi/setvars.sh && \
     spack compiler find && \
-    python3 edit_compilers.py /root/.spack/linux/compilers.yaml oneapi && \
-    rm edit_compilers.py && \
     spack external find --all --not-buildable && \
+    python3 edit_spack.py && \
+    rm edit_spack.py && \
     spack install netcdf-fortran ^hdf5~mpi %oneapi && \
     spack install libxml2 %oneapi && \
     spack install openmpi +internal-hwloc~vt %oneapi
@@ -61,9 +62,8 @@ RUN echo export NETCDFHOME=$(spack find -p --no-groups netcdf-c | tr -s ' ' | cu
     echo export PATH=$(spack find -p --no-groups netcdf-c | tr -s ' ' | cut -d$' ' -f2)/bin:\
 $(spack find -p --no-groups netcdf-fortran | tr -s ' ' | cut -d$' ' -f2)/bin:\
 $(spack find -p --no-groups openmpi | tr -s ' ' | cut -d$' ' -f2)/bin:\
-/opt/intel/oneapi/compiler/latest/linux/bin/intel64:\
-/opt/intel/oneapi/compiler/latest/linux/bin:$PATH >> /etc/environment  && \
+/opt/intel/oneapi/compiler/latest/bin:$PATH >> /etc/environment  && \
     echo export LD_LIBRARY_PATH=$(spack find -p --no-groups netcdf-c | tr -s ' ' | cut -d$' ' -f2)/lib:\
 $(spack find -p --no-groups netcdf-fortran | tr -s ' ' | cut -d$' ' -f2)/lib:\
 $(spack find -p --no-groups openmpi | tr -s ' ' | cut -d$' ' -f2)/lib:\
-/opt/intel/oneapi/compiler/latest/linux/compiler/lib/intel64_lin >> /etc/environment
+/opt/intel/oneapi/compiler/latest/lib >> /etc/environment
