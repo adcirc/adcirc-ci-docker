@@ -28,11 +28,12 @@ COPY edit_spack.py /root/edit_spack.py
 RUN source /opt/intel/oneapi/setvars.sh && \
     spack compiler find && \
     spack external find --all --not-buildable && \
-    python3 edit_spack.py && \
+    python3 edit_spack.py /root/.spack/linux/compilers.yaml oneapi && \
     rm edit_spack.py && \
     spack install netcdf-fortran ^hdf5~mpi %oneapi && \
     spack install libxml2 %oneapi && \
-    spack install openmpi +internal-hwloc~vt %oneapi
+    spack install openmpi +internal-hwloc~vt %oneapi && \
+    spack clean -a
 
 #...Install xdmf
 # Note that we need to patch xdmf because it is stale and conflicts typedefs with hdf5 > 1.10.x
