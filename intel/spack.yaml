@@ -1,0 +1,36 @@
+spack:
+  specs: 
+    - netcdf-c ^hdf5~mpi %oneapi
+    - netcdf-fortran fflags="-heap-arrays 8192" %oneapi
+    - xdmf3+fortran fflags="-heap-arrays 8182" %oneapi
+    - openmpi+legacylaunchers+internal-hwloc+internal-pmix+internal-libevent fabrics=none fflags="-heap-arrays 8192" %oneapi
+    - cmake
+    - libjpeg-turbo
+    - python+optimizations@3.11.9
+    - py-pip
+  concretizer:
+    unify: true
+  config:
+    template_dirs:
+      - templates
+  container:
+    os_packages:
+      final:
+        - gcc
+        - gcc-c++
+        - git
+        - procps
+        - ncurses
+        - which
+        - make
+    images:
+      os: rockylinux:9
+      spack: develop
+    format: docker
+    strip: true
+    template: container/TemplateDockerfile
+    labels:
+      maintainer: Zach Cobell <zcobell@gmail.com>
+      io.k8s.description: ADCIRC CI Container
+      io.openshift.expose-services: 
+
