@@ -26,6 +26,8 @@ set -o noclobber \
 &&   echo '  - cmake' \
 &&   echo '  - ninja' \
 &&   echo '  - libjpeg-turbo' \
+&&   echo '  - python+optimizations@3.11.9' \
+&&   echo '  - py-pip' \
 &&   echo '  concretizer:' \
 &&   echo '    unify: true' \
 &&   echo '  config:' \
@@ -74,6 +76,7 @@ RUN dnf update -y && dnf install -y epel-release && dnf update -y \
 
 
 COPY --from=builder /opt/intel /opt/intel 
+RUN /opt/view/bin/pip install basemap basemap-data-hires numpy matplotlib pyyaml xarray netCDF4 tqdm awscli boto3
 RUN echo mpi=exclude >> /opt/intel/config.txt && \
     echo export SETVARS_ARGS=--config=/opt/intel/config.txt >> /opt/spack-environment/activate.sh && \
     echo "source /opt/intel/setvars.sh 2>&1 > /dev/null" >> /opt/spack-environment/activate.sh && \

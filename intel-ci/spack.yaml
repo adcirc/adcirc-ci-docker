@@ -7,6 +7,8 @@ spack:
     - cmake
     - ninja
     - libjpeg-turbo
+    - python+optimizations@3.11.9
+    - py-pip
   concretizer:
     unify: true
   config:

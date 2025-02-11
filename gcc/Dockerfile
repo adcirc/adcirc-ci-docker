@@ -17,7 +17,7 @@ set -o noclobber \
 
 # Install the software, remove unnecessary deps
 RUN cd /opt/spack-compiler-environment && spack env activate . && spack install --fail-fast && spack gc -y
-RUN spack compilers && spack compiler add /opt/compilers/linux-rocky9-broadwell/gcc-11.5.0/gcc-14.2.0-* && spack compilers
+RUN spack compilers && spack compiler add /opt/compilers/linux-*/gcc-*/gcc-14.* && spack compilers
 
 RUN git clone https://github.com/adcirc/adcirc-spack && spack repo add adcirc-spack
 
@@ -85,7 +85,7 @@ RUN dnf update -y && dnf install -y epel-release && dnf update -y \
 
 
 COPY --from=builder /opt/compilers /opt/compilers
-RUN /opt/view/bin/pip install basemap basemap-data-hires numpy matplotlib pyyaml xarray netCDF4 tqdm awscli boto3
+RUN /opt/view/bin/pip install numpy matplotlib pyyaml xarray netCDF4 tqdm awscli boto3
 RUN echo export NETCDFHOME=/opt/view >> /opt/spack-environment/activate.sh && \
     echo export NETCDF_FORTRAN_HOME=/opt/view >> /opt/spack-environment/activate.sh && \
     echo export HDF5HOME=/opt/view >> /opt/spack-environment/activate.sh && \
@@ -93,7 +93,8 @@ RUN echo export NETCDFHOME=/opt/view >> /opt/spack-environment/activate.sh && \
     echo export XDMFHOME=/opt/view >> /opt/spack-environment/activate.sh && \
     echo export PATH=\$PATH:/opt/views/compiler-view/bin >> /opt/spack-environment/activate.sh && \
     echo export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/opt/views/compiler-view/lib >> /opt/spack-environment/activate.sh && \ 
-    echo export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/opt/views/compiler-view/lib64 >> /opt/spack-environment/activate.sh
+    echo export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/opt/views/compiler-view/lib64 >> /opt/spack-environment/activate.sh && \
+    echo export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/opt/views/view/lib64 >> /opt/spack-environment/activate.sh
 RUN useradd -m adcirc -u 1001
 USER adcirc
 WORKDIR /home/adcirc
