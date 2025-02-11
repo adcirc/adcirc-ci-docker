@@ -2,14 +2,23 @@
 FROM spack/rockylinux9:develop AS builder
 
 
-RUN dnf install -y procps wget
-RUN wget https://registrationcenter-download.intel.com/akdlm/IRC_NAS/84c039b6-2b7d-4544-a745-3fcf8afd643f/intel-dpcpp-cpp-compiler-2025.0.4.20_offline.sh && \
-    bash ./intel-dpcpp-cpp-compiler-2025.0.4.20_offline.sh -a -s --eula accept --install-dir /opt/intel && \
-    rm intel-dpcpp-cpp-compiler-2025.0.4.20_offline.sh 
-RUN wget https://registrationcenter-download.intel.com/akdlm/IRC_NAS/ad42ee3b-7a2f-41cb-b902-689f651920da/intel-fortran-compiler-2025.0.4.21_offline.sh && \
-    bash ./intel-fortran-compiler-2025.0.4.21_offline.sh -a -s --eula accept --install-dir /opt/intel && \
-    rm intel-fortran-compiler-2025.0.4.21_offline.sh 
-RUN source /opt/intel/setvars.sh && spack compiler find 
+RUN mkdir -p /opt/spack-compiler-environment && \
+set -o noclobber \
+&&  (echo spack: \
+&&   echo '  specs:' \
+&&   echo '  - gcc+piclibs+strip@14.2.0' \
+&&   echo '  concretizer:' \
+&&   echo '    unify: true' \
+&&   echo '  config:' \
+&&   echo '    template_dirs:' \
+&&   echo '    - templates' \
+&&   echo '    install_tree: /opt/compilers' \
+&&   echo '  view: /opt/views/compiler-view') > /opt/spack-compiler-environment/spack.yaml
+
+# Install the software, remove unnecessary deps
+RUN cd /opt/spack-compiler-environment && spack env activate . && spack install --fail-fast && spack gc -y
+RUN spack compilers && spack compiler add /opt/compilers/linux-rocky9-broadwell/gcc-11.5.0/gcc-14.2.0-* && spack compilers
+
 RUN git clone https://github.com/adcirc/adcirc-spack && spack repo add adcirc-spack
 
 
@@ -19,10 +28,10 @@ RUN mkdir -p /opt/spack-environment && \
 set -o noclobber \
 &&  (echo spack: \
 &&   echo '  specs:' \
-&&   echo '  - netcdf-c ^hdf5~mpi %oneapi' \
-&&   echo '  - netcdf-fortran fflags="-heap-arrays 8192" %oneapi' \
-&&   echo '  - xdmf3+fortran fflags="-heap-arrays 8182" %oneapi' \
-&&   echo '  - openmpi+legacylaunchers+internal-hwloc+internal-pmix+internal-libevent fabrics=none fflags="-heap-arrays 8192" %oneapi' \
+&&   echo '  - netcdf-c ^hdf5~mpi %gcc@14.2.0' \
+&&   echo '  - netcdf-fortran %gcc@14.2.0' \
+&&   echo '  - xdmf3+fortran %gcc@14.2.0' \
+&&   echo '  - openmpi+legacylaunchers+internal-hwloc+internal-pmix+internal-libevent fabrics=none %gcc@14.2.0' \
 &&   echo '  - cmake' \
 &&   echo '  - ninja' \
 &&   echo '  - libjpeg-turbo' \
@@ -71,20 +80,20 @@ RUN { \
 
 
 RUN dnf update -y && dnf install -y epel-release && dnf update -y \
- && dnf install -y gcc gcc-c++ git git-lfs procps ncurses which make \
+ && dnf install -y gcc which ncurses git git-lfs make \
  && rm -rf /var/cache/dnf && dnf clean all
 
 
-COPY --from=builder /opt/intel /opt/intel 
+COPY --from=builder /opt/compilers /opt/compilers
 RUN /opt/view/bin/pip install basemap basemap-data-hires numpy matplotlib pyyaml xarray netCDF4 tqdm awscli boto3
-RUN echo mpi=exclude >> /opt/intel/config.txt && \
-    echo export SETVARS_ARGS=--config=/opt/intel/config.txt >> /opt/spack-environment/activate.sh && \
-    echo "source /opt/intel/setvars.sh 2>&1 > /dev/null" >> /opt/spack-environment/activate.sh && \
-    echo export NETCDFHOME=/opt/view >> /opt/spack-environment/activate.sh && \
+RUN echo export NETCDFHOME=/opt/view >> /opt/spack-environment/activate.sh && \
     echo export NETCDF_FORTRAN_HOME=/opt/view >> /opt/spack-environment/activate.sh && \
     echo export HDF5HOME=/opt/view >> /opt/spack-environment/activate.sh && \
     echo export HDF5_ROOT=/opt/view >> /opt/spack-environment/activate.sh && \ 
-    echo export XDMFHOME=/opt/view >> /opt/spack-environment/activate.sh
+    echo export XDMFHOME=/opt/view >> /opt/spack-environment/activate.sh && \
+    echo export PATH=\$PATH:/opt/views/compiler-view/bin >> /opt/spack-environment/activate.sh && \
+    echo export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/opt/views/compiler-view/lib >> /opt/spack-environment/activate.sh && \ 
+    echo export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/opt/views/compiler-view/lib64 >> /opt/spack-environment/activate.sh
 RUN useradd -m adcirc -u 1001
 USER adcirc
 WORKDIR /home/adcirc

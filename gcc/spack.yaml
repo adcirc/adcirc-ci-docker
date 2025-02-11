@@ -1,9 +1,9 @@
 spack:
   specs: 
-    - netcdf-c ^hdf5~mpi %oneapi
-    - netcdf-fortran fflags="-heap-arrays 8192" %oneapi
-    - xdmf3+fortran fflags="-heap-arrays 8182" %oneapi
-    - openmpi+legacylaunchers+internal-hwloc+internal-pmix+internal-libevent fabrics=none fflags="-heap-arrays 8192" %oneapi
+    - netcdf-c ^hdf5~mpi %gcc@14.2.0
+    - netcdf-fortran %gcc@14.2.0
+    - xdmf3+fortran %gcc@14.2.0
+    - openmpi+legacylaunchers+internal-hwloc+internal-pmix+internal-libevent fabrics=none %gcc@14.2.0
     - cmake
     - ninja
     - libjpeg-turbo
@@ -18,12 +18,10 @@ spack:
     os_packages:
       final:
         - gcc
-        - gcc-c++
+        - which
+        - ncurses
         - git
         - git-lfs
-        - procps
-        - ncurses
-        - which
         - make
     images:
       os: rockylinux:9
