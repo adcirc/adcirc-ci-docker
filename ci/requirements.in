@@ -1,0 +1,11 @@
+# Top-level Python packages used by the ADCIRC CI jobs and test suite.
+# requirements.txt is the pinned lock generated from this file; see README.md.
+awscli
+boto3
+cartopy
+matplotlib
+netCDF4
+numpy
+pyyaml
+tqdm
+xarray

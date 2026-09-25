@@ -1,0 +1,129 @@
+# ADCIRC base environment
+#
+# One manifest drives both architectures. The compiler is selected by the
+# architecture Spack is running on:
+#   x86_64  -> Intel oneAPI (icx/icpx/ifx)
+#   aarch64 -> GCC
+#
+# Render the Dockerfile with ../scripts/render.sh after editing this file.
+spack:
+  definitions:
+  # Model dependencies without Fortran code
+  - c_stack:
+    - netcdf-c ^hdf5~mpi
+    - libjpeg-turbo
+  # Model dependencies with Fortran code
+  - fortran_stack:
+    - netcdf-fortran
+    - adcirc.xdmf3+fortran~mpi
+    - openmpi+internal-hwloc+internal-pmix+internal-libevent fabrics=none
+
+  - when: arch.satisfies("target=x86_64:")
+    compilers: [intel-oneapi-compilers@2026.0.0]
+  - when: arch.satisfies("target=x86_64:")
+    c_toolchain: ["%adcirc_oneapi"]
+  - when: arch.satisfies("target=x86_64:")
+    fortran_toolchain: ['%adcirc_oneapi fflags="-heap-arrays 8192"']
+
+  - when: arch.satisfies("target=aarch64:")
+    compilers: [gcc@16.1.0 +piclibs ~bootstrap]
+  - when: arch.satisfies("target=aarch64:")
+    c_toolchain: ["%adcirc_gcc"]
+  - when: arch.satisfies("target=aarch64:")
+    fortran_toolchain: ["%adcirc_gcc"]
+
+  specs:
+  # Compilers are concretized and installed first so the model dependencies
+  # can be built with them
+  - group: compiler
+    specs:
+    - $compilers
+  - group: apps
+    needs: [compiler]
+    specs:
+    - cmake
+    - ninja
+    - matrix:
+      - [$c_stack]
+      - [$c_toolchain]
+    - matrix:
+      - [$fortran_stack]
+      - [$fortran_toolchain]
+
+  toolchains:
+    adcirc_oneapi:
+    - spec: "%c=intel-oneapi-compilers@2026.0.0"
+      when: "%c"
+    - spec: "%cxx=intel-oneapi-compilers@2026.0.0"
+      when: "%cxx"
+    - spec: "%fortran=intel-oneapi-compilers@2026.0.0"
+      when: "%fortran"
+    adcirc_gcc:
+    - spec: "%c=gcc@16.1.0"
+      when: "%c"
+    - spec: "%cxx=gcc@16.1.0"
+      when: "%cxx"
+    - spec: "%fortran=gcc@16.1.0"
+      when: "%fortran"
+
+  packages:
+    all:
+      # Build for a fixed CPU level rather than the build runner's CPU. This is
+      # a preference rather than a requirement so that the system compiler,
+      # which Spack detects at the host's level, stays usable.
+      target: [x86_64_v3, aarch64]
+    # GCC 15 defaults to C23, where bool is a keyword; c-blosc 1.21.6 still
+    # defines its own bool type
+    c-blosc:
+      require:
+      - spec: 'cflags="-std=gnu17"'
+        when: "%c=gcc@15:"
+
+  concretizer:
+    unify: true
+    targets:
+      # Allow the fixed target even when the build host reports a lower level
+      host_compatible: false
+
+  # Listed in priority order: adcirc overrides packages in builtin (xdmf3)
+  repos:
+    adcirc:
+      git: https://github.com/adcirc/adcirc-spack.git
+      commit: 06ba6bbe6fa4782d507a3769b0131b99098f9deb  # main
+    builtin:
+      git: https://github.com/spack/spack-packages.git
+      commit: d4f7c711a6a42f1c4d551c8fd10fce9a11340a81  # releases/v2026.06
+
+  config:
+    template_dirs:
+    - templates
+
+  container:
+    format: docker
+    images:
+      build: spack/rockylinux9:1.2.2@sha256:3d91c583a3b81a4d598e4821f6248948d52e70a6fcb3ca8d8315d3cc318a1c55
+      final: rockylinux/rockylinux:9.8@sha256:8101994123cf3d0a8fee517bee7f39e555c7d92bd2d9eb3303cc988a0eeed00f
+    os_packages:
+      # The schema does not accept dnf; yum is an alias for dnf on Rocky 9
+      command: yum
+      # Package versions are fixed by the pinned final image; bump the image to
+      # pick up OS updates
+      update: false
+      final:
+      - diffutils
+      - file
+      - gdb
+      - nano
+      - procps-ng
+      - unzip
+      - vim-enhanced
+      - which
+      - xz
+      - zip
+    strip: false  # the template strips everything except the compilers
+    template: container/Dockerfile.adcirc
+    labels:
+      org.opencontainers.image.title: ADCIRC base
+      org.opencontainers.image.description: Compilers and libraries used to build and run ADCIRC
+      org.opencontainers.image.authors: Zach Cobell <zcobell@gmail.com>
+      org.opencontainers.image.source: https://github.com/adcirc/adcirc-ci-docker
