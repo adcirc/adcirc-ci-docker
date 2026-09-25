@@ -1,0 +1,31 @@
+# The images themselves are built and published manually with
+# scripts/build.sh and scripts/publish.sh (see README.md); a cold build takes
+# too long for CI. This workflow only runs the quick checks.
+name: Check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Lint and check the rendered Dockerfile
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Check that base/Dockerfile matches base/spack.yaml
+        run: scripts/render.sh --check
+
+      - name: Lint the CI Dockerfile
+        uses: hadolint/hadolint-action@v3.5.0
+        with:
+          dockerfile: ci/Dockerfile
+
+      - name: Lint the scripts
+        run: shellcheck scripts/*.sh
