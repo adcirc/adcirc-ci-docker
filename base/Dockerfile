@@ -47,7 +47,7 @@ set -o noclobber \
 &&   echo '  - group: apps' \
 &&   echo '    needs: [compiler]' \
 &&   echo '    specs:' \
-&&   echo '    - cmake' \
+&&   echo '    - '"'"'cmake@4:'"'"'' \
 &&   echo '    - ninja' \
 &&   echo '    - matrix:' \
 &&   echo '      - [$model_deps]' \
@@ -99,7 +99,7 @@ set -o noclobber \
 &&   echo '  repos:' \
 &&   echo '    adcirc:' \
 &&   echo '      git: https://github.com/adcirc/adcirc-spack.git' \
-&&   echo '      commit: 06ba6bbe6fa4782d507a3769b0131b99098f9deb  # main' \
+&&   echo '      commit: 68462523946813d2a8fcdc2d0022a0c056409546  # main' \
 &&   echo '    builtin:' \
 &&   echo '      git: https://github.com/spack/spack-packages.git' \
 &&   echo '      commit: d4f7c711a6a42f1c4d551c8fd10fce9a11340a81  # releases/v2026.06' \
