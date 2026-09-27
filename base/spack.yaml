@@ -35,7 +35,7 @@ spack:
   - group: apps
     needs: [compiler]
     specs:
-    - cmake
+    - "cmake@4:"
     - ninja
     - matrix:
       - [$model_deps]
@@ -87,7 +87,7 @@ spack:
   repos:
     adcirc:
       git: https://github.com/adcirc/adcirc-spack.git
-      commit: 06ba6bbe6fa4782d507a3769b0131b99098f9deb  # main
+      commit: 68462523946813d2a8fcdc2d0022a0c056409546  # main
     builtin:
       git: https://github.com/spack/spack-packages.git
       commit: d4f7c711a6a42f1c4d551c8fd10fce9a11340a81  # releases/v2026.06
