@@ -20,12 +20,10 @@ RUN mkdir -p /opt/spack-environment && \
 set -o noclobber \
 &&  (echo spack: \
 &&   echo '  definitions:' \
-&&   echo '  # Model dependencies without Fortran code' \
-&&   echo '  - c_stack:' \
+&&   echo '  # Model dependencies' \
+&&   echo '  - model_deps:' \
 &&   echo '    - netcdf-c ^hdf5~mpi' \
 &&   echo '    - libjpeg-turbo' \
-&&   echo '  # Model dependencies with Fortran code' \
-&&   echo '  - fortran_stack:' \
 &&   echo '    - netcdf-fortran' \
 &&   echo '    - adcirc.xdmf3+fortran~mpi' \
 &&   echo '    - openmpi+internal-hwloc+internal-pmix+internal-libevent fabrics=none' \
@@ -33,16 +31,12 @@ set -o noclobber \
 &&   echo '  - when: arch.satisfies("target=x86_64:")' \
 &&   echo '    compilers: [intel-oneapi-compilers@2026.0.0]' \
 &&   echo '  - when: arch.satisfies("target=x86_64:")' \
-&&   echo '    c_toolchain: ['"'"'%adcirc_oneapi'"'"']' \
-&&   echo '  - when: arch.satisfies("target=x86_64:")' \
-&&   echo '    fortran_toolchain: ['"'"'%adcirc_oneapi fflags="-heap-arrays 8192"'"'"']' \
+&&   echo '    toolchain: ['"'"'%adcirc_oneapi'"'"']' \
 &&   echo '' \
 &&   echo '  - when: arch.satisfies("target=aarch64:")' \
 &&   echo '    compilers: [gcc@16.1.0 +piclibs ~bootstrap]' \
 &&   echo '  - when: arch.satisfies("target=aarch64:")' \
-&&   echo '    c_toolchain: ['"'"'%adcirc_gcc'"'"']' \
-&&   echo '  - when: arch.satisfies("target=aarch64:")' \
-&&   echo '    fortran_toolchain: ['"'"'%adcirc_gcc'"'"']' \
+&&   echo '    toolchain: ['"'"'%adcirc_gcc'"'"']' \
 &&   echo '' \
 &&   echo '  specs:' \
 &&   echo '  # Compilers are concretized and installed first so the model dependencies' \
@@ -56,11 +50,8 @@ set -o noclobber \
 &&   echo '    - cmake' \
 &&   echo '    - ninja' \
 &&   echo '    - matrix:' \
-&&   echo '      - [$c_stack]' \
-&&   echo '      - [$c_toolchain]' \
-&&   echo '    - matrix:' \
-&&   echo '      - [$fortran_stack]' \
-&&   echo '      - [$fortran_toolchain]' \
+&&   echo '      - [$model_deps]' \
+&&   echo '      - [$toolchain]' \
 &&   echo '' \
 &&   echo '  toolchains:' \
 &&   echo '    adcirc_oneapi:' \
@@ -84,6 +75,13 @@ set -o noclobber \
 &&   echo '      # a preference rather than a requirement so that the system compiler,' \
 &&   echo '      # which Spack detects at the host'"'"'s level, stays usable.' \
 &&   echo '      target: [x86_64_v3, aarch64]' \
+&&   echo '      # ifx places automatic and temporary arrays on the stack by default, which' \
+&&   echo '      # overflows the stack at runtime with large arrays. Put them all on the' \
+&&   echo '      # heap in everything built with ifx, since the stack limit is set by' \
+&&   echo '      # whatever host runs the container.' \
+&&   echo '      require:' \
+&&   echo '      - spec: fflags="-heap-arrays"' \
+&&   echo '        when: '"'"'%fortran=intel-oneapi-compilers'"'"'' \
 &&   echo '    # GCC 15 defaults to C23, where bool is a keyword; c-blosc 1.21.6 still' \
 &&   echo '    # defines its own bool type' \
 &&   echo '    c-blosc:' \

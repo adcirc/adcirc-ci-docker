@@ -8,12 +8,10 @@
 # Render the Dockerfile with ../scripts/render.sh after editing this file.
 spack:
   definitions:
-  # Model dependencies without Fortran code
-  - c_stack:
+  # Model dependencies
+  - model_deps:
     - netcdf-c ^hdf5~mpi
     - libjpeg-turbo
-  # Model dependencies with Fortran code
-  - fortran_stack:
     - netcdf-fortran
     - adcirc.xdmf3+fortran~mpi
     - openmpi+internal-hwloc+internal-pmix+internal-libevent fabrics=none
@@ -21,16 +19,12 @@ spack:
   - when: arch.satisfies("target=x86_64:")
     compilers: [intel-oneapi-compilers@2026.0.0]
   - when: arch.satisfies("target=x86_64:")
-    c_toolchain: ["%adcirc_oneapi"]
-  - when: arch.satisfies("target=x86_64:")
-    fortran_toolchain: ['%adcirc_oneapi fflags="-heap-arrays 8192"']
+    toolchain: ["%adcirc_oneapi"]
 
   - when: arch.satisfies("target=aarch64:")
     compilers: [gcc@16.1.0 +piclibs ~bootstrap]
   - when: arch.satisfies("target=aarch64:")
-    c_toolchain: ["%adcirc_gcc"]
-  - when: arch.satisfies("target=aarch64:")
-    fortran_toolchain: ["%adcirc_gcc"]
+    toolchain: ["%adcirc_gcc"]
 
   specs:
   # Compilers are concretized and installed first so the model dependencies
@@ -44,11 +38,8 @@ spack:
     - cmake
     - ninja
     - matrix:
-      - [$c_stack]
-      - [$c_toolchain]
-    - matrix:
-      - [$fortran_stack]
-      - [$fortran_toolchain]
+      - [$model_deps]
+      - [$toolchain]
 
   toolchains:
     adcirc_oneapi:
@@ -72,6 +63,13 @@ spack:
       # a preference rather than a requirement so that the system compiler,
       # which Spack detects at the host's level, stays usable.
       target: [x86_64_v3, aarch64]
+      # ifx places automatic and temporary arrays on the stack by default, which
+      # overflows the stack at runtime with large arrays. Put them all on the
+      # heap in everything built with ifx, since the stack limit is set by
+      # whatever host runs the container.
+      require:
+      - spec: 'fflags="-heap-arrays"'
+        when: "%fortran=intel-oneapi-compilers"
     # GCC 15 defaults to C23, where bool is a keyword; c-blosc 1.21.6 still
     # defines its own bool type
     c-blosc:
