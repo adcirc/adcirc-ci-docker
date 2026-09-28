@@ -1,9 +1,13 @@
 # syntax=docker/dockerfile:1
+# check=skip=InvalidDefaultArgInFrom
 #
 # ADCIRC CI image: the devel base image plus the Python packages used by the
 # CI jobs and the test suite (plotting, AWS access to test data).
 #
-ARG BASE_IMAGE=adcircorg/adcirc-base:latest-devel
+# The devel image to build on, e.g. adcircorg/adcirc-base:2026.1.0-devel-amd64.
+# There is deliberately no default so that the CI image is always built on an
+# explicit version (scripts/build.sh passes the one it just built).
+ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 
 SHELL [ "/bin/bash", "-o", "pipefail", "-c" ]
