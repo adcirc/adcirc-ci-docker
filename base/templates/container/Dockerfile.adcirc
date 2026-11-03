@@ -20,6 +20,10 @@ RUN mkdir -p {{ paths.environment }} && \
 set -o noclobber \
 {{ manifest }} > {{ paths.environment }}/spack.yaml
 
+# The Spack image ships with a clone of the builtin package repository, which
+# Spack reuses as is; check out the commits pinned in spack.yaml instead
+RUN cd {{ paths.environment }} && spack -e . repo update
+
 RUN --mount=type=secret,id=buildcache_user,env=SPACK_BUILDCACHE_USER \
     --mount=type=secret,id=buildcache_token,env=SPACK_BUILDCACHE_TOKEN \
     cd {{ paths.environment }} && spack env activate . && \

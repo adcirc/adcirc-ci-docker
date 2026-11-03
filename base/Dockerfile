@@ -29,12 +29,12 @@ set -o noclobber \
 &&   echo '    - openmpi+internal-hwloc+internal-pmix+internal-libevent fabrics=none' \
 &&   echo '' \
 &&   echo '  - when: arch.satisfies("target=x86_64:")' \
-&&   echo '    compilers: [intel-oneapi-compilers@2026.0.0]' \
+&&   echo '    compilers: [intel-oneapi-compilers@2026.1.1]' \
 &&   echo '  - when: arch.satisfies("target=x86_64:")' \
 &&   echo '    toolchain: ['"'"'%adcirc_oneapi'"'"']' \
 &&   echo '' \
 &&   echo '  - when: arch.satisfies("target=aarch64:")' \
-&&   echo '    compilers: [gcc@16.1.0 +piclibs ~bootstrap]' \
+&&   echo '    compilers: [gcc@16.2.0 +piclibs ~bootstrap]' \
 &&   echo '  - when: arch.satisfies("target=aarch64:")' \
 &&   echo '    toolchain: ['"'"'%adcirc_gcc'"'"']' \
 &&   echo '' \
@@ -55,18 +55,18 @@ set -o noclobber \
 &&   echo '' \
 &&   echo '  toolchains:' \
 &&   echo '    adcirc_oneapi:' \
-&&   echo '    - spec: '"'"'%c=intel-oneapi-compilers@2026.0.0'"'"'' \
+&&   echo '    - spec: '"'"'%c=intel-oneapi-compilers@2026.1.1'"'"'' \
 &&   echo '      when: '"'"'%c'"'"'' \
-&&   echo '    - spec: '"'"'%cxx=intel-oneapi-compilers@2026.0.0'"'"'' \
+&&   echo '    - spec: '"'"'%cxx=intel-oneapi-compilers@2026.1.1'"'"'' \
 &&   echo '      when: '"'"'%cxx'"'"'' \
-&&   echo '    - spec: '"'"'%fortran=intel-oneapi-compilers@2026.0.0'"'"'' \
+&&   echo '    - spec: '"'"'%fortran=intel-oneapi-compilers@2026.1.1'"'"'' \
 &&   echo '      when: '"'"'%fortran'"'"'' \
 &&   echo '    adcirc_gcc:' \
-&&   echo '    - spec: '"'"'%c=gcc@16.1.0'"'"'' \
+&&   echo '    - spec: '"'"'%c=gcc@16.2.0'"'"'' \
 &&   echo '      when: '"'"'%c'"'"'' \
-&&   echo '    - spec: '"'"'%cxx=gcc@16.1.0'"'"'' \
+&&   echo '    - spec: '"'"'%cxx=gcc@16.2.0'"'"'' \
 &&   echo '      when: '"'"'%cxx'"'"'' \
-&&   echo '    - spec: '"'"'%fortran=gcc@16.1.0'"'"'' \
+&&   echo '    - spec: '"'"'%fortran=gcc@16.2.0'"'"'' \
 &&   echo '      when: '"'"'%fortran'"'"'' \
 &&   echo '' \
 &&   echo '  packages:' \
@@ -102,7 +102,7 @@ set -o noclobber \
 &&   echo '      commit: 68462523946813d2a8fcdc2d0022a0c056409546  # main' \
 &&   echo '    builtin:' \
 &&   echo '      git: https://github.com/spack/spack-packages.git' \
-&&   echo '      commit: d4f7c711a6a42f1c4d551c8fd10fce9a11340a81  # releases/v2026.06' \
+&&   echo '      commit: 91cfb5b973c311f742cd31061fe224d40f1fd830  # releases/v2026.10' \
 &&   echo '' \
 &&   echo '  config:' \
 &&   echo '    template_dirs:' \
@@ -111,6 +111,10 @@ set -o noclobber \
 &&   echo '    install_tree:' \
 &&   echo '      root: /opt/software' \
 &&   echo '  view: /opt/views/view') > /opt/spack-environment/spack.yaml
+
+# The Spack image ships with a clone of the builtin package repository, which
+# Spack reuses as is; check out the commits pinned in spack.yaml instead
+RUN cd /opt/spack-environment && spack -e . repo update
 
 RUN --mount=type=secret,id=buildcache_user,env=SPACK_BUILDCACHE_USER \
     --mount=type=secret,id=buildcache_token,env=SPACK_BUILDCACHE_TOKEN \

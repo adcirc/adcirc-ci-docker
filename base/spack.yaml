@@ -17,12 +17,12 @@ spack:
     - openmpi+internal-hwloc+internal-pmix+internal-libevent fabrics=none
 
   - when: arch.satisfies("target=x86_64:")
-    compilers: [intel-oneapi-compilers@2026.0.0]
+    compilers: [intel-oneapi-compilers@2026.1.1]
   - when: arch.satisfies("target=x86_64:")
     toolchain: ["%adcirc_oneapi"]
 
   - when: arch.satisfies("target=aarch64:")
-    compilers: [gcc@16.1.0 +piclibs ~bootstrap]
+    compilers: [gcc@16.2.0 +piclibs ~bootstrap]
   - when: arch.satisfies("target=aarch64:")
     toolchain: ["%adcirc_gcc"]
 
@@ -43,18 +43,18 @@ spack:
 
   toolchains:
     adcirc_oneapi:
-    - spec: "%c=intel-oneapi-compilers@2026.0.0"
+    - spec: "%c=intel-oneapi-compilers@2026.1.1"
       when: "%c"
-    - spec: "%cxx=intel-oneapi-compilers@2026.0.0"
+    - spec: "%cxx=intel-oneapi-compilers@2026.1.1"
       when: "%cxx"
-    - spec: "%fortran=intel-oneapi-compilers@2026.0.0"
+    - spec: "%fortran=intel-oneapi-compilers@2026.1.1"
       when: "%fortran"
     adcirc_gcc:
-    - spec: "%c=gcc@16.1.0"
+    - spec: "%c=gcc@16.2.0"
       when: "%c"
-    - spec: "%cxx=gcc@16.1.0"
+    - spec: "%cxx=gcc@16.2.0"
       when: "%cxx"
-    - spec: "%fortran=gcc@16.1.0"
+    - spec: "%fortran=gcc@16.2.0"
       when: "%fortran"
 
   packages:
@@ -90,7 +90,7 @@ spack:
       commit: 68462523946813d2a8fcdc2d0022a0c056409546  # main
     builtin:
       git: https://github.com/spack/spack-packages.git
-      commit: d4f7c711a6a42f1c4d551c8fd10fce9a11340a81  # releases/v2026.06
+      commit: 91cfb5b973c311f742cd31061fe224d40f1fd830  # releases/v2026.10
 
   config:
     template_dirs:
