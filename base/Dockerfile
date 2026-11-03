@@ -88,6 +88,11 @@ set -o noclobber \
 &&   echo '      require:' \
 &&   echo '      - spec: cflags="-std=gnu17"' \
 &&   echo '        when: '"'"'%c=gcc@15:'"'"'' \
+&&   echo '    # Use the OS CA certificates (/etc/pki/tls, the same path in the build and' \
+&&   echo '    # final images) instead of a copy from ca-certificates-mozilla, so that CA' \
+&&   echo '    # updates come from a single place: the ca-certificates package' \
+&&   echo '    openssl:' \
+&&   echo '      require: [certs=system]' \
 &&   echo '' \
 &&   echo '  concretizer:' \
 &&   echo '    unify: true' \
@@ -197,7 +202,7 @@ RUN { \
 
 RUN yum install -y epel-release dnf-plugins-core \
  && yum config-manager --set-enabled crb \
- && yum install -y 7zip bc bzip2 diffutils dos2unix file gdb nano nco procps-ng python3.14 rsync time tmux unzip vim-enhanced wget which xz zip \
+ && yum install -y ca-certificates-2026.2.92_v9.0.319-90.3.el9_8 7zip bc bzip2 diffutils dos2unix file gdb nano nco procps-ng python3.14 rsync time tmux unzip vim-enhanced wget which xz zip \
  && rm -rf /var/cache/yum  && yum clean all
 
 # Python environment for setting up and post-processing runs, installed from
@@ -259,7 +264,7 @@ RUN { \
 
 RUN yum install -y epel-release dnf-plugins-core \
  && yum config-manager --set-enabled crb \
- && yum install -y 7zip bc bzip2 diffutils dos2unix file gdb nano nco procps-ng python3.14 rsync time tmux unzip vim-enhanced wget which xz zip gcc gcc-c++ git git-lfs make \
+ && yum install -y ca-certificates-2026.2.92_v9.0.319-90.3.el9_8 7zip bc bzip2 diffutils dos2unix file gdb nano nco procps-ng python3.14 rsync time tmux unzip vim-enhanced wget which xz zip gcc gcc-c++ git git-lfs make \
  && rm -rf /var/cache/yum  && yum clean all
 
 # Python environment for setting up and post-processing runs, installed from

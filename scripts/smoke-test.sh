@@ -28,6 +28,42 @@ check_libraries() {
   echo "All shared libraries resolve"
 }
 
+# Certificate authorities that no CA bundle in the image may trust: the root
+# that signed the compromised eMudhra intermediates (October 2026)
+distrusted_cas=("emSign ECC Root CA - G3")
+
+check_certificates() {
+  # The OS bundle, the one Spack's OpenSSL uses (and so its curl and netCDF),
+  # and Python's default and certifi bundles
+  local openssl_dir bundle subjects ca bad=0
+  openssl_dir="$(openssl version -d | sed -E 's/^OPENSSLDIR: "(.*)"$/\1/')"
+  local bundles=(/etc/pki/tls/cert.pem "${openssl_dir}/cert.pem")
+  mapfile -t -O "${#bundles[@]}" bundles < <(python3 -c '
+import ssl, certifi
+print(ssl.get_default_verify_paths().openssl_cafile)
+print(certifi.where())')
+  for bundle in "${bundles[@]}"; do
+    subjects="$(openssl crl2pkcs7 -nocrl -certfile "${bundle}" | \
+      openssl pkcs7 -print_certs -noout | grep '^subject=' || true)"
+    # Guards against a missing, empty, or truncated bundle passing the check
+    if [[ "$(grep -c . <<< "${subjects}")" -lt 100 ]]; then
+      echo "CA bundle ${bundle} is missing or has too few certificates" >&2
+      bad=1
+      continue
+    fi
+    for ca in "${distrusted_cas[@]}"; do
+      if grep -q -F "CN=${ca}" <<< "${subjects}"; then
+        echo "CA bundle ${bundle} trusts distrusted CA: ${ca}" >&2
+        bad=1
+      fi
+    done
+  done
+  if [[ "${bad}" -ne 0 ]]; then
+    exit 1
+  fi
+  echo "CA bundles do not trust any distrusted CA"
+}
+
 run_programs() {
   # The shared work directory holds the programs, which are read-only for the
   # other users the tests run as, so each run writes its output separately
@@ -51,6 +87,7 @@ EOF
 case "${mode}" in
   devel)
     check_libraries
+    check_certificates
     cat > "${work}/hello_mpi.f90" << 'EOF'
 program hello_mpi
   use mpi
@@ -100,6 +137,7 @@ EOF
     ;;
   runtime)
     check_libraries
+    check_certificates
     # The MPI wrapper scripts ship with OpenMPI; the compilers behind them
     # must not
     for compiler in icx ifx /opt/views/view/bin/gfortran; do
@@ -111,6 +149,7 @@ EOF
     run_programs
     ;;
   ci)
+    check_certificates
     python3 -c "import boto3, cartopy, matplotlib, netCDF4, numpy, tqdm, xarray, yaml"
     aws --version
     # The CI packages are added to the base image's Python environment, so

@@ -76,6 +76,11 @@ spack:
       require:
       - spec: 'cflags="-std=gnu17"'
         when: "%c=gcc@15:"
+    # Use the OS CA certificates (/etc/pki/tls, the same path in the build and
+    # final images) instead of a copy from ca-certificates-mozilla, so that CA
+    # updates come from a single place: the ca-certificates package
+    openssl:
+      require: [certs=system]
 
   concretizer:
     unify: true
@@ -108,6 +113,9 @@ spack:
       # pick up OS updates
       update: false
       final:
+      # Newer than the one in the pinned image: distrusts the compromised
+      # eMudhra CA (RLSA-2026:88459). Drop once the final image includes it.
+      - ca-certificates-2026.2.92_v9.0.319-90.3.el9_8
       - 7zip
       - bc
       - bzip2
