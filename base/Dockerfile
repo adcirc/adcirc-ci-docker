@@ -191,12 +191,24 @@ RUN { \
 && ln -s /opt/spack-environment/compiler-runtime.conf /etc/ld.so.conf.d/spack-compiler-runtime.conf \
 && ldconfig
 
-RUN yum install -y diffutils file gdb nano procps-ng unzip vim-enhanced which xz zip \
+RUN yum install -y epel-release dnf-plugins-core \
+ && yum config-manager --set-enabled crb \
+ && yum install -y 7zip bc bzip2 diffutils dos2unix file gdb nano nco procps-ng python3.14 rsync time tmux unzip vim-enhanced wget which xz zip \
  && rm -rf /var/cache/yum  && yum clean all
+
+# Python environment for setting up and post-processing runs, installed from
+# wheels pinned in requirements.txt. The wheels bundle their own libraries
+# (netCDF, HDF5, PROJ), separate from the Spack ones. Their test
+# suites are removed to save space.
+COPY requirements.txt /opt/python/requirements.txt
+RUN python3.14 -m venv /opt/python \
+ && /opt/python/bin/pip install --no-cache-dir --only-binary=:all: -r /opt/python/requirements.txt \
+ && find /opt/python/lib/python3.14/site-packages -mindepth 2 -type d -name tests -prune -exec rm -rf {} + \
+ && echo 'export PATH=/opt/python/bin:$PATH' >> /opt/spack-environment/activate.sh
 
 # Mirror activate.sh so that commands which bypass the entrypoint
 # (e.g. singularity exec, docker run --entrypoint) still work
-ENV PATH=/opt/views/view/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ENV PATH=/opt/python/bin:/opt/views/view/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 # Default non-root user. The primary group is 0 and the home directory is
 # group-writable so the image also works when a platform (e.g. OpenShift)
@@ -241,12 +253,24 @@ RUN { \
 && ln -s /opt/spack-environment/compiler-runtime.conf /etc/ld.so.conf.d/spack-compiler-runtime.conf \
 && ldconfig
 
-RUN yum install -y diffutils file gdb nano procps-ng unzip vim-enhanced which xz zip gcc gcc-c++ git git-lfs make \
+RUN yum install -y epel-release dnf-plugins-core \
+ && yum config-manager --set-enabled crb \
+ && yum install -y 7zip bc bzip2 diffutils dos2unix file gdb nano nco procps-ng python3.14 rsync time tmux unzip vim-enhanced wget which xz zip gcc gcc-c++ git git-lfs make \
  && rm -rf /var/cache/yum  && yum clean all
+
+# Python environment for setting up and post-processing runs, installed from
+# wheels pinned in requirements.txt. The wheels bundle their own libraries
+# (netCDF, HDF5, PROJ), separate from the Spack ones. Their test
+# suites are removed to save space.
+COPY requirements.txt /opt/python/requirements.txt
+RUN python3.14 -m venv /opt/python \
+ && /opt/python/bin/pip install --no-cache-dir --only-binary=:all: -r /opt/python/requirements.txt \
+ && find /opt/python/lib/python3.14/site-packages -mindepth 2 -type d -name tests -prune -exec rm -rf {} + \
+ && echo 'export PATH=/opt/python/bin:$PATH' >> /opt/spack-environment/activate.sh
 
 # Mirror activate.sh so that commands which bypass the entrypoint
 # (e.g. singularity exec, docker run --entrypoint) still work
-ENV PATH=/opt/views/view/bin:/opt/views/oneapi/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ENV PATH=/opt/python/bin:/opt/views/view/bin:/opt/views/oneapi/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 # Library locations used by ADCIRC's CMake and CI build commands
 ENV NETCDFHOME=/opt/views/view \

@@ -37,6 +37,14 @@ run_programs() {
   mpirun --oversubscribe -np 2 "${work}/hello_mpi"
   # grep reads all of the output; with -q, ncdump would fail with SIGPIPE
   ncdump -h "${output}" | grep "dimensions:" > /dev/null
+  # NCO and the Python packages bring their own netCDF/HDF5, so check that
+  # they read files written with the Spack ones
+  ncks -H -v zeta "${output}" | grep "zeta" > /dev/null
+  python3 - "${output}" << 'EOF'
+import sys
+import cartopy, dask, matplotlib, netCDF4, numpy, pandas, pyproj, scipy, shapely, xarray, yaml
+assert xarray.open_dataset(sys.argv[1])["zeta"].values.tolist() == [1, 2, 3, 4]
+EOF
   echo "Programs ran successfully"
 }
 

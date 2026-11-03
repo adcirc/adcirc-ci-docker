@@ -2,7 +2,8 @@
 # check=skip=InvalidDefaultArgInFrom
 #
 # ADCIRC CI image: the devel base image plus the Python packages used by the
-# CI jobs and the test suite (plotting, AWS access to test data).
+# CI jobs and the test suite that the base image does not already have (AWS
+# access to test data), and map data for the test suite plots.
 #
 # The devel image to build on, e.g. adcircorg/adcirc-base:2026.1.0-devel-amd64.
 # There is deliberately no default so that the CI image is always built on an
@@ -14,24 +15,14 @@ SHELL [ "/bin/bash", "-o", "pipefail", "-c" ]
 
 USER 0
 
-# hadolint ignore=DL3033
-RUN yum install -y python3.14 python3.14-pip && \
-    rm -rf /var/cache/yum && \
-    yum clean all
-
-COPY requirements.txt /opt/ci-python/requirements.txt
-RUN python3.14 -m venv /opt/ci-python && \
-    /opt/ci-python/bin/pip install --no-cache-dir --only-binary=:all: \
-        -r /opt/ci-python/requirements.txt
-
-# activate.sh sets PATH outright, so the virtual environment is added there
-# for jobs that source it as well as through ENV for everything else
-RUN echo "export PATH=/opt/ci-python/bin:\$PATH" >> /opt/spack-environment/activate.sh
-ENV PATH=/opt/ci-python/bin:${PATH}
-
-# Map data used by the test suite plots, downloaded once into a read-only
-# location so that it is available to any user the image runs as
-RUN cartopy_feature_download --no-warn --output /opt/cartopy-data \
+# The packages are added to the base image's Python environment
+# (/opt/python), which is already on PATH. The map data used by the test suite
+# plots is downloaded once into a read-only location so that it is available
+# to any user the image runs as.
+COPY requirements.txt /opt/python/ci-requirements.txt
+RUN /opt/python/bin/pip install --no-cache-dir --only-binary=:all: \
+        -r /opt/python/requirements.txt -r /opt/python/ci-requirements.txt && \
+    cartopy_feature_download --no-warn --output /opt/cartopy-data \
         gshhs physical cultural cultural-extra
 ENV CARTOPY_DATA_DIR=/opt/cartopy-data
 

@@ -8,7 +8,7 @@ and libraries.
 |---|---|---|
 | `adcircorg/adcirc-base:<version>-devel` | Compilers, libraries, and build tools | Building ADCIRC; users compiling their own code |
 | `adcircorg/adcirc-base:<version>-runtime` | Libraries and compiler runtime libraries, no compilers | The published `adcircorg/adcirc` image |
-| `adcircorg/adcirc-ci:<version>` | `devel` plus the Python packages used by CI and the test suite | CircleCI |
+| `adcircorg/adcirc-ci:<version>` | `devel` plus the extra Python packages and map data used by CI and the test suite | CircleCI |
 
 Every image is published for `linux/amd64` and `linux/arm64`:
 
@@ -28,7 +28,8 @@ plus CMake and Ninja. The `adcirc` package repository comes from
 | `base/spack.yaml` | The Spack environment and container settings for both architectures |
 | `base/templates/container/Dockerfile.adcirc` | Template used by `spack containerize` (devel and runtime targets) |
 | `base/Dockerfile` | Rendered from the two files above; do not edit by hand |
-| `ci/` | The CI image, built on top of `devel`, and its pinned Python requirements |
+| `base/requirements.in`, `base/requirements.txt` | Python packages installed in `/opt/python` in both base images, and their lock |
+| `ci/` | The CI image, built on top of `devel`, and the extra Python packages it adds to `/opt/python` |
 | `scripts/render.sh` | Renders `base/Dockerfile` |
 | `scripts/smoke-test.sh` | Tests run against the images after they are built |
 | `scripts/build.sh` | Builds, tests, and pushes the images for the current architecture |
@@ -87,17 +88,25 @@ With only `SPACK_BUILDCACHE` set, packages are read from the cache (the package 
 token as well, packages built during the run are pushed to it. The Intel compilers are not redistributable and are
 never pushed; Spack downloads them from Intel on each build.
 
-## Updating the CI Python packages
+## Updating the Python packages
 
-`ci/requirements.txt` is a lock file generated from `ci/requirements.in` on the same OS and Python version the CI
-image uses:
+Both base images have a Python environment in `/opt/python` (first on `PATH`), installed from the lock file
+`base/requirements.txt`. The CI image adds the packages in the lock file `ci/requirements.txt` to the same environment,
+so the two lock files must agree. They are generated from `base/requirements.in` and `ci/requirements.in` together,
+on the same OS and Python version the images use:
 
 ```bash
-docker run --rm -v "$PWD/ci:/ci" rockylinux/rockylinux:9.8 bash -c '
-  dnf install -y -q python3.14 python3.14-pip &&
-  python3.14 -m venv /v && /v/bin/pip install -q --only-binary=:all: -r /ci/requirements.in &&
-  /v/bin/pip freeze'
+docker run --rm -v "$PWD:/r:ro" rockylinux/rockylinux:9.8 bash -c '
+  dnf install -y -q python3.14 python3.14-pip > /dev/null &&
+  python3.14 -m venv /all && /all/bin/pip install -q --only-binary=:all: \
+    -r /r/base/requirements.in -r /r/ci/requirements.in &&
+  /all/bin/pip freeze > /tmp/all.txt &&
+  python3.14 -m venv /base && /base/bin/pip install -q --only-binary=:all: \
+    -c /tmp/all.txt -r /r/base/requirements.in &&
+  /base/bin/pip freeze > /tmp/base.txt &&
+  echo "### base/requirements.txt" && cat /tmp/base.txt &&
+  echo "### ci/requirements.txt" && grep -v -i -x -F -f /tmp/base.txt /tmp/all.txt'
 ```
 
-Replace the package lines in `ci/requirements.txt` with the output, and check that the result is the same for
+Replace the package lines in each lock file with its part of the output, and check that the result is the same for
 `--platform linux/amd64` and `--platform linux/arm64`.

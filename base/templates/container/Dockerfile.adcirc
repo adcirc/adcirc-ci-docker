@@ -103,13 +103,25 @@ RUN { \
 && ldconfig
 
 {% if os_packages_final %}
-RUN {{ os_packages_final.install }} {{ os_packages_final.list | join | replace('\n', ' ') }}{% if flavor == "devel" %} gcc gcc-c++ git git-lfs make{% endif %} \
+RUN {{ os_packages_final.install }} epel-release dnf-plugins-core \
+ && yum config-manager --set-enabled crb \
+ && {{ os_packages_final.install }} {{ os_packages_final.list | join | replace('\n', ' ') }}{% if flavor == "devel" %} gcc gcc-c++ git git-lfs make{% endif %} \
  && {{ os_packages_final.clean }}
 {% endif %}
 
+# Python environment for setting up and post-processing runs, installed from
+# wheels pinned in requirements.txt. The wheels bundle their own libraries
+# (netCDF, HDF5, PROJ), separate from the Spack ones. Their test
+# suites are removed to save space.
+COPY requirements.txt /opt/python/requirements.txt
+RUN python3.14 -m venv /opt/python \
+ && /opt/python/bin/pip install --no-cache-dir --only-binary=:all: -r /opt/python/requirements.txt \
+ && find /opt/python/lib/python3.14/site-packages -mindepth 2 -type d -name tests -prune -exec rm -rf {} + \
+ && echo 'export PATH=/opt/python/bin:$PATH' >> {{ paths.environment }}/activate.sh
+
 # Mirror activate.sh so that commands which bypass the entrypoint
 # (e.g. singularity exec, docker run --entrypoint) still work
-ENV PATH={{ paths.view }}/bin{% if flavor == "devel" %}:/opt/views/oneapi/bin{% endif %}:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ENV PATH=/opt/python/bin:{{ paths.view }}/bin{% if flavor == "devel" %}:/opt/views/oneapi/bin{% endif %}:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 {% if flavor == "devel" %}
 
 # Library locations used by ADCIRC's CMake and CI build commands

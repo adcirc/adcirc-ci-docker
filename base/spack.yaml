@@ -108,13 +108,23 @@ spack:
       # pick up OS updates
       update: false
       final:
+      - 7zip
+      - bc
+      - bzip2
       - diffutils
+      - dos2unix
       - file
       - gdb
       - nano
+      - nco
       - procps-ng
+      - python3.14
+      - rsync
+      - time
+      - tmux
       - unzip
       - vim-enhanced
+      - wget
       - which
       - xz
       - zip
