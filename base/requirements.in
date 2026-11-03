@@ -1,0 +1,14 @@
+# Top-level Python packages installed in the base images (/opt/python) for
+# setting up and post-processing ADCIRC runs. requirements.txt is the pinned
+# lock generated from this file; see README.md.
+cartopy
+dask
+matplotlib
+netCDF4
+numpy
+pandas
+pyproj
+pyyaml
+scipy
+shapely
+xarray
