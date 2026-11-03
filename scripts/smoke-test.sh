@@ -113,6 +113,18 @@ EOF
   ci)
     python3 -c "import boto3, cartopy, matplotlib, netCDF4, numpy, tqdm, xarray, yaml"
     aws --version
+    # The CI packages are added to the base image's Python environment, so
+    # check that both locks are installed exactly, without either one having
+    # changed a package the other pins
+    python3 -m pip check
+    mismatched="$(python3 -m pip freeze | \
+      grep -v -i -x -F -f - /opt/python/requirements.txt /opt/python/ci-requirements.txt | \
+      grep -v ':#' || true)"
+    if [[ -n "${mismatched}" ]]; then
+      echo "Installed Python packages do not match the locks:" >&2
+      echo "${mismatched}" >&2
+      exit 1
+    fi
     echo "CI tooling available"
     ;;
   *)
